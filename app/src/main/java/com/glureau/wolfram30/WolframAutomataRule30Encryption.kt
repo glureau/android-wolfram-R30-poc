@@ -45,6 +45,7 @@ class WolframAutomataRule30Encryption : Encryption {
             result.set(0, data.size(), true)
             result.and(data)
             result.xor(generatedKey)
+            emitter.onComplete()
         }.subscribeOn(Schedulers.computation())
     }
 
@@ -74,7 +75,6 @@ class WolframAutomataRule30Encryption : Encryption {
                 fullKey[i] = bufferA[fullKeyColumn]
             }
         }
-        progression.onComplete()
         return fullKey
     }
 
