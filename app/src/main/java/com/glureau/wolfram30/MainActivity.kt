@@ -6,6 +6,7 @@ import android.util.Log
 import kotlinx.android.synthetic.main.activity_main.*
 import unsigned.Ubyte
 import unsigned.toUbyte
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -20,63 +21,63 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val message = "abcdef".toByteArray()
-        val privateKey = "12345".toByteArray()
-        Log.e("OOO", "message=${message.contentToString()}")
-        Log.e("OOO", "privateKey=${privateKey.contentToString()}")
+//        val message = "abcdef".toByteArray()
+        //val privateKey = "12345".toByteArray()
+
+        // Random data
+        val message = kotlin.ByteArray(4096)
+        Random(1).nextBytes(message)
+        // Crypto-secure
+        val privateKey = kotlin.ByteArray(1024/8)
+        Random(1).nextBytes(privateKey)
 
         val fullKeyLength = message.size * 8
         val triangleWidth = privateKey.size * 8 + fullKeyLength * 2
-        Log.e("OOO", "fullKeyLength=$fullKeyLength")
-        Log.e("OOO", "triangleWidth=$triangleWidth")
-
-        // Prepare the space to compute
-//        val table = mutableListOf<ByteArray>()
-        val table = mutableListOf<BooleanArray>()
+        val fullKeyColumn = (triangleWidth / 2) + 1
 
         // Initialize the first line
-//        val firstLine = ByteArray(triangleWidth, { BYTE_FF.toByte() })
-        val firstLine = BooleanArray(triangleWidth, { true })
+        val bufferA = BooleanArray(triangleWidth, { true })
+        val bufferB = BooleanArray(triangleWidth, { true })
         privateKey.forEachIndexed(action = { i, b ->
-            //            firstLine[fullKeyLength + i] = b
             val ub = b.toUbyte()
-            Log.e("OOO", "Fill from ${(message.size + i) * 8 + 0} to ${(message.size + i) * 8 + 7}")
-            firstLine[(message.size + i) * 8 + 0] = ((ub shr 7) rem 2) == BYTE_01
-            firstLine[(message.size + i) * 8 + 1] = ((ub shr 6) rem 2) == BYTE_01
-            firstLine[(message.size + i) * 8 + 2] = ((ub shr 5) rem 2) == BYTE_01
-            firstLine[(message.size + i) * 8 + 3] = ((ub shr 4) rem 2) == BYTE_01
-            firstLine[(message.size + i) * 8 + 4] = ((ub shr 3) rem 2) == BYTE_01
-            firstLine[(message.size + i) * 8 + 5] = ((ub shr 2) rem 2) == BYTE_01
-            firstLine[(message.size + i) * 8 + 6] = ((ub shr 1) rem 2) == BYTE_01
-            firstLine[(message.size + i) * 8 + 7] = ((ub shr 0) rem 2) == BYTE_01
+            val lineOffset = message.size + i
+            bufferA[lineOffset * 8 + 0] = ((ub shr 7) rem 2) == BYTE_01
+            bufferA[lineOffset * 8 + 1] = ((ub shr 6) rem 2) == BYTE_01
+            bufferA[lineOffset * 8 + 2] = ((ub shr 5) rem 2) == BYTE_01
+            bufferA[lineOffset * 8 + 3] = ((ub shr 4) rem 2) == BYTE_01
+            bufferA[lineOffset * 8 + 4] = ((ub shr 3) rem 2) == BYTE_01
+            bufferA[lineOffset * 8 + 5] = ((ub shr 2) rem 2) == BYTE_01
+            bufferA[lineOffset * 8 + 6] = ((ub shr 1) rem 2) == BYTE_01
+            bufferA[lineOffset * 8 + 7] = ((ub shr 0) rem 2) == BYTE_01
         })
-        table.add(firstLine)
 
-        Log.e("OOO", "BYTE_01=" + BYTE_01.toBinaryString())
-        Log.e("OOO", "BYTE_FF=" + BYTE_FF.toBinaryString())
-        Log.e("OOO", "BYTE_7F=" + BYTE_7F.toBinaryString())
-        Log.e("OOO", "BYTE_FE=" + BYTE_FE.toBinaryString())
-
-        Log.e("000", "privateKey=${privateKey.contentToString()}")
-        Log.e("000", "binarized=" + firstLine.joinToString(separator = "", transform = { b -> if (b) "1" else "0" }))
-
+        Log.e("000", "binarized=" + bufferA.joinToString(separator = "", transform = { b -> if (b) "1" else "0" }))
+        var fullKeyStr = ""
         for (i in 1 until fullKeyLength) {
-            table.add(computeRule30Bool(table[i - 1]))
-            Log.e("000", "binarized=" + table[i].joinToString(separator = "", transform = { b -> if (b) "1" else "0" }))
+            if (i %2 == 1) {
+                computeRule30Bool(bufferA, bufferB)
+                fullKeyStr += bufferB[fullKeyColumn]
+                Log.e("000", "binarized=" + bufferB.joinToString(separator = "", transform = { b -> if (b) "1" else "0" }))
+            } else {
+                computeRule30Bool(bufferB, bufferA)
+                fullKeyStr += bufferA[fullKeyColumn]
+                Log.e("000", "binarized=" + bufferA.joinToString(separator = "", transform = { b -> if (b) "1" else "0" }))
+            }
         }
 
-        text.setText("hello")
+        Log.e("000", "fullKey=$fullKeyStr")
+
+        text.text = "It's working!"
     }
 
-    fun computeRule30Bool(input: BooleanArray): BooleanArray {
-        val result = BooleanArray(input.size, { true })
+    fun computeRule30Bool(input: BooleanArray, output: BooleanArray) {
+//        output.fill(true)
         for (i in 1 until input.size - 1) {
             val prev = input[i - 1]
             val current = input[i]
             val next = input[i + 1]
-            result[i] = rule30(prev, current, next)
+            output[i] = rule30(prev, current, next)
         }
-        return result
     }
 
     fun rule30(a: Boolean, b: Boolean, c: Boolean): Boolean {
@@ -86,30 +87,5 @@ class MainActivity : AppCompatActivity() {
         if (!a && b && !c) return true
         if (a && b && c) return true
         return false
-    }
-
-    fun computeRule30_optimized(bytes: ByteArray): ByteArray {
-        val result = ByteArray(bytes.size)
-        bytes.forEachIndexed({ byteIndex, byte ->
-            result[byteIndex] = computeRule30_optimized(
-                    if (byteIndex > 0) bytes[byteIndex - 1] else null,
-                    byte,
-                    if (byteIndex < bytes.size) bytes[byteIndex + 1] else null)
-        })
-        return result
-    }
-
-    /**
-     * Compute the Wolfram automata rule 30
-     *
-     */
-    fun computeRule30_optimized(before: Byte?, current: Byte, after: Byte?): Byte {
-        val result: Byte = 0
-
-        var prevBit = if (before != null) ((before.toUbyte() or BYTE_FE) and BYTE_FF) == BYTE_FF else true
-        var nextBit = if (after != null) ((after.toUbyte() or BYTE_7F) and BYTE_FF) == BYTE_FF else true
-        TODO("Implement with bytes to reduce memory usage & speed computes")
-
-        return result
     }
 }
