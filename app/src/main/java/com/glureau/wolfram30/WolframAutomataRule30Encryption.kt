@@ -5,7 +5,6 @@ import de.adorsys.android.securestoragelibrary.SecurePreferences
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.schedulers.Schedulers
-import java.security.SecureRandom
 import java.util.*
 
 
@@ -20,7 +19,7 @@ class WolframAutomataRule30Encryption : Encryption {
     override fun generateInitialKey(privateKeyId: String): BitSet {
         val privateKey = BitSet(KEY_SIZE)
 //        val rand = SecureRandom()
-        val rand = Random(0)
+        val rand = Random(0) // TODO: Use SecureRandom indeed.
         for (i in 0..KEY_SIZE) {
             privateKey[i] = rand.nextBoolean()
         }
@@ -52,7 +51,8 @@ class WolframAutomataRule30Encryption : Encryption {
 
             val duration = System.currentTimeMillis() - startTime
             Log.e("PERFORMANCE", "Encrypt duration: $duration ms")
-            // 200 chars = 400ms per encrypt (Pixel 2 emulated) [398-431] (skip 2st computes, JVM not ready yet)
+            // v0: 200 chars = 400ms per encrypt (Pixel 2 emulated) [398-431] (skip 2st computes, JVM not ready yet)
+            // v1: 200 chars = 270ms [253-305] (keep prev/current boolean instead of re-reading)
 
         }.subscribeOn(Schedulers.computation())
     }
@@ -87,21 +87,21 @@ class WolframAutomataRule30Encryption : Encryption {
     }
 
 
-    private fun computeRule30Bool(input: BitSet, output: BitSet, bufferSize: Int) {
+    private inline fun computeRule30Bool(input: BitSet, output: BitSet, bufferSize: Int) {
+        var prev = input[0]
+        var current = input[1]
+        var next: Boolean
         for (i in 1 until bufferSize - 1) {
-            val prev = input[i - 1]
-            val current = input[i]
-            val next = input[i + 1]
+            next = input[i + 1]
             output[i] = rule30(prev, current, next)
+            prev = current
+            current = next
         }
     }
 
-    private fun rule30(a: Boolean, b: Boolean, c: Boolean): Boolean {
-        //return (a == b == c) || (!a && (b xor c))
-        if (!a && !b && !c) return true
-        if (!a && !b && c) return true
-        if (!a && b && !c) return true
-        if (a && b && c) return true
+    private inline fun rule30(a: Boolean, b: Boolean, c: Boolean): Boolean {
+        if (!a && (b xor c)) return true
+        if ((a == b) && (a == c)) return true
         return false
     }
 
