@@ -53,7 +53,7 @@ public class Base64 {
      * @param bitSet the BitSet to encode into a String
      * @return the String encoding of the BitSet
      */
-    public static String encode(BitSet bitSet) {
+    public static String encode(OBitSet bitSet) {
         StringBuffer b = new StringBuffer();
         boolean finished = false;
         int offset = 0;
@@ -73,7 +73,7 @@ public class Base64 {
         return b.toString();
     }
 
-    private static int determineRunLength(BitSet bitSet, int offset, boolean b) {
+    private static int determineRunLength(OBitSet bitSet, int offset, boolean b) {
         int bitSetLength = bitSet.length();
         int runLength = 0;
         for (; offset + runLength < bitSetLength; runLength++)
@@ -82,7 +82,7 @@ public class Base64 {
         return runLength;
     }
 
-    private static char encodeNext6Bits(BitSet bitSet, int offset) {
+    private static char encodeNext6Bits(OBitSet bitSet, int offset) {
         int realBits = 0x00000000;
         for (int bit = 0; bit < 6; bit++)
             if (bitSet.get(offset + bit))
@@ -124,17 +124,3 @@ public class Base64 {
         return bitSet;
     }
 }
-/*
- * CVS Log
- *
- * $Log: Base64.java,v $
- * Revision 1.1  2007/08/15 17:59:10  curran
- * Initial commit to SourceForge
- * Revision 1.1 2007/07/26 00:30:58 ckellehe Initial
- * Creation
- *
- * Revision 1.3 2007/06/12 20:00:48 ckellehe Fixed the bug where the base64 was
- * crashing when attempting to encode a bit set that had all of it's bits set to
- * true Revision 1.2 2007/06/08 15:01:44 ckellehe Initial Creation
- *
- */

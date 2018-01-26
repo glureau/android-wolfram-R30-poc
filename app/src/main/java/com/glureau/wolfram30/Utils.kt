@@ -16,4 +16,4 @@ fun BitSet.toBinaryString(bufferSize: Int): String {
     return result.toString()
 }
 
-fun BitSet.toBase64() = Base64.encode(this)
+fun OBitSet.toBase64() = Base64.encode(this)

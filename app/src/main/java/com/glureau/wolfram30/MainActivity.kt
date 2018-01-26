@@ -5,7 +5,6 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -22,14 +21,14 @@ class MainActivity : AppCompatActivity() {
         val encryptionKey = encryption.generateInitialKey("toto_room")
 
         val originalMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer pretium, arcu ut bibendum facilisis, ex sapien posuere quam, ut cursus eros lectus sit amet orci. Aliquam malesuada eleifend viverra. Donec nec lorem libero. Aenean id arcu turpis. Vivamus diam ex, tristique non commodo vel, venenatis sed metus. Sed sit amet luctus ante. Proin et facilisis sapien. Morbi hendrerit augue arcu, id placerat nisi auctor sit amet. Nullam sed augue accumsan, vestibulum velit nec, laoreet ligula cras amet."
-        val originalBitSet = BitSet.valueOf(originalMessage.toByteArray())
+        val originalBitSet = OBitSet.valueOf(originalMessage.toByteArray())
 
         foo(encryption, originalBitSet, originalMessage)
     }
 
-    fun foo(encryption: Encryption, originalBitSet: BitSet, originalMessage: String) {
+    fun foo(encryption: Encryption, originalBitSet: OBitSet, originalMessage: String) {
         val startTime = System.currentTimeMillis()
-        val encryptedString = BitSet(originalBitSet.size())
+        val encryptedString = OBitSet(originalBitSet.length())
         encryption.encrypt("toto_room", originalBitSet, encryptedString)
                 .sample(1000, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -39,7 +38,7 @@ class MainActivity : AppCompatActivity() {
                     text.text = "Encryption Error... $error"
                 }, {
                     //                    text.text = "Decryption..."
-                    val finalMessage = BitSet(encryptedString.size())
+                    val finalMessage = OBitSet(encryptedString.length())
                     encryption.encrypt("toto_room", encryptedString, finalMessage)
                             .sample(1000, TimeUnit.MILLISECONDS)
                             .observeOn(AndroidSchedulers.mainThread())
