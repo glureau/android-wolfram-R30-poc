@@ -53,6 +53,7 @@ class WolframAutomataRule30Encryption : Encryption {
             Log.e("PERFORMANCE", "Encrypt duration: $duration ms")
             // v0: 200 chars = 400ms per encrypt (Pixel 2 emulated) [398-431] (skip 2st computes, JVM not ready yet)
             // v1: 200 chars = 270ms [253-305] (keep prev/current boolean instead of re-reading)
+            // v1: 500 chars = 1150ms [1150-1221] (using more chars as durations looks more stable, and improvement should be more visible)
 
         }.subscribeOn(Schedulers.computation())
     }
