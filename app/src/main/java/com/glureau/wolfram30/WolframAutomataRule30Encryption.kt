@@ -1,5 +1,6 @@
 package com.glureau.wolfram30
 
+import android.util.Log
 import de.adorsys.android.securestoragelibrary.SecurePreferences
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
@@ -37,6 +38,7 @@ class WolframAutomataRule30Encryption : Encryption {
 
     override fun encrypt(privateKeyId: String, data: BitSet, result: BitSet): Observable<Float> {
         return Observable.create<Float> { emitter ->
+            val startTime = System.currentTimeMillis()
             val b64 = SecurePreferences.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")
             val privateKey = Base64.decode(b64)
 
@@ -46,6 +48,12 @@ class WolframAutomataRule30Encryption : Encryption {
             result.and(data)
             result.xor(generatedKey)
             emitter.onComplete()
+
+
+            val duration = System.currentTimeMillis() - startTime
+            Log.e("PERFORMANCE", "Encrypt duration: $duration ms")
+            // 200 chars = 400ms per encrypt (Pixel 2 emulated) [398-431] (skip 2st computes, JVM not ready yet)
+
         }.subscribeOn(Schedulers.computation())
     }
 
