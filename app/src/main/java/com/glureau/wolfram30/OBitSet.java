@@ -26,7 +26,6 @@ package com.glureau.wolfram30;
  * questions.
  */
 
-import java.io.ObjectStreamField;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -34,7 +33,7 @@ import java.nio.ByteOrder;
  * @author Gregory Lureau
  *         Lighter version of java.util.BitSet, for our optimization requirements.
  */
-public class OBitSet implements Cloneable {
+public class OBitSet {
     /*
      * BitSets are packed into arrays of "words."  Currently a word is
      * a long, which consists of 64 bits, requiring 6 address bits.
@@ -330,9 +329,6 @@ public class OBitSet implements Cloneable {
      * @throws IndexOutOfBoundsException if the specified index is negative
      */
     public boolean get(int bitIndex) {
-        if (bitIndex < 0)
-            throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
-
         int wordIndex = wordIndex(bitIndex);
         return (wordIndex < wordsInUse)
                 && ((words[wordIndex] & (1L << bitIndex)) != 0);
@@ -398,4 +394,5 @@ public class OBitSet implements Cloneable {
     public int bitCount() {
         return bitCount;
     }
+
 }

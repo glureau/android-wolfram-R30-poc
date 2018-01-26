@@ -39,7 +39,7 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
 
     override fun encrypt(privateKeyId: String, data: OBitSet, result: OBitSet): Observable<Float> {
         return Observable.create<Float> { emitter ->
-                        val startTime = System.currentTimeMillis()
+            val startTime = System.currentTimeMillis()
 
 
             val b64 = prefs.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")

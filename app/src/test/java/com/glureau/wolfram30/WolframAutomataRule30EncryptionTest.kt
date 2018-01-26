@@ -17,7 +17,7 @@ class WolframAutomataRule30EncryptionTest {
         val privateKeyLength = WolframAutomataRule30Encryption.KEY_SIZE
         val privateKey = OBitSet(privateKeyLength)
         privateKey.set(0, privateKeyLength, true)
-        privateKey.set(0, false)
+        privateKey.flip(0)
 
         val messageLength = 100
 
