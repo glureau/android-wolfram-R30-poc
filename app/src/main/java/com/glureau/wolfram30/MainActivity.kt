@@ -21,7 +21,14 @@ class MainActivity : AppCompatActivity() {
         // Should retrieve and display the key
         val encryptionKey = encryption.generateInitialKey("toto_room")
 
-        val originalMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer pretium, arcu ut bibendum facilisis, ex sapien posuere quam, ut cursus eros lectus sit amet orci. Aliquam malesuada eleifend viverra. Donec nec lorem libero. Aenean id arcu turpis. Vivamus diam ex, tristique non commodo vel, venenatis sed metus. Sed sit amet luctus ante. Proin et facilisis sapien. Morbi hendrerit augue arcu, id placerat nisi auctor sit amet. Nullam sed augue accumsan, vestibulum velit nec, laoreet ligula cras amet."
+        // SIZE = 1024 char
+        val originalMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed condimentum tellus sed semper euismod. Integer dignissim eros tellus, et sagittis tellus sagittis at. " +
+                "Donec vehicula tortor a augue tincidunt, ut auctor nulla feugiat. Vivamus luctus nulla mauris, vel iaculis felis rhoncus a. Pellentesque id orci eu lorem hendrerit finibus id at mi. " +
+                "Aenean velit purus, porta at lacus ut, rutrum posuere sapien. Nunc fringilla egestas sollicitudin. Quisque sit amet orci ut purus aliquet luctus et vel urna. Nullam vel efficitur arcu, posuere condimentum libero. " +
+                "Curabitur vitae odio non felis interdum pulvinar eu at purus. Nunc vel finibus felis.\n\n" +
+                "Cras vitae dolor lacus. Nunc tempus, mi a venenatis venenatis, quam lacus tempor nibh, nec fringilla nisl sapien quis lectus. Interdum et malesuada fames ac ante ipsum primis in faucibus." +
+                " Mauris pharetra odio a lectus varius commodo. Fusce tincidunt tellus vel ex sodales, in sollicitudin mi mollis. Integer rutrum lacus id mi pretium luctus. Mauris eget libero magna. Morbi metus."
+
         val originalBitSet = OBitSet.valueOf(originalMessage.toByteArray())
 
         foo(encryption, originalBitSet, originalMessage)

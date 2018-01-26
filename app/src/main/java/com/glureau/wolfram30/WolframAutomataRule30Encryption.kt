@@ -16,6 +16,7 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
     companion object {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         var KEY_SIZE = 1024 // bits
+        val WORKSPACE_MAXIMUM_WIDTH =  4096 // (bits) Don't compute more than that width
     }
 
     override fun generateInitialKey(privateKeyId: String): OBitSet {
@@ -67,7 +68,8 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun generateEncryptionKey(privateKey: OBitSet, keyLength: Int, progression: ObservableEmitter<Float>?): OBitSet {
-        val triangleWidth = KEY_SIZE + keyLength * 2
+        val triangleWidth = minOf(KEY_SIZE + keyLength * 2, WORKSPACE_MAXIMUM_WIDTH)
+        val paddingLeft = (triangleWidth - KEY_SIZE) / 2
         val fullKeyColumn = (triangleWidth / 2)
 
         // Prepare the memory for computation
@@ -77,7 +79,7 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
         // Initialize the first line
         bufferA.set(0, triangleWidth, true)
         for (i in 0 until KEY_SIZE) {
-            bufferA[keyLength + i] = privateKey[i]
+            bufferA[paddingLeft + i] = privateKey[i]
         }
 
         bufferB.set(0, triangleWidth, true)
