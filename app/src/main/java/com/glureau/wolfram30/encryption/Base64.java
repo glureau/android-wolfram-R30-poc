@@ -1,4 +1,4 @@
-package com.glureau.wolfram30;
+package com.glureau.wolfram30.encryption;
 // Copied from https://github.com/curran/jyvis/blob/master/src/jyVis/data/Base64.java
 
 /******************************************************************************

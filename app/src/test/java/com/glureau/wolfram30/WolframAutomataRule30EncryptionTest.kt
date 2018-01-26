@@ -1,5 +1,8 @@
 package com.glureau.wolfram30
 
+import com.glureau.wolfram30.encryption.OBitSet
+import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
+import com.glureau.wolfram30.encryption.toBinaryString
 import com.glureau.wolfram30.storage.RamSecurePreferences
 import org.junit.Assert
 import org.junit.Test

@@ -5,6 +5,9 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import com.glureau.wolfram30.encryption.Encryption
+import com.glureau.wolfram30.encryption.OBitSet
+import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*

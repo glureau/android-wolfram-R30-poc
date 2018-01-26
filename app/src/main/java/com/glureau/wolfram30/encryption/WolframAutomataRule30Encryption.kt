@@ -1,4 +1,4 @@
-package com.glureau.wolfram30
+package com.glureau.wolfram30.encryption
 
 import android.support.annotation.VisibleForTesting
 import android.util.Log
