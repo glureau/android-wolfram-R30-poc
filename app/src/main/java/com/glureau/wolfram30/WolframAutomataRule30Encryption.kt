@@ -1,7 +1,8 @@
 package com.glureau.wolfram30
 
+import android.support.annotation.VisibleForTesting
 import android.util.Log
-import de.adorsys.android.securestoragelibrary.SecurePreferences
+import com.glureau.wolfram30.storage.SecurePreferences
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.schedulers.Schedulers
@@ -11,16 +12,17 @@ import java.util.*
 /**
  * Created by Greg on 25/01/2018.
  */
-class WolframAutomataRule30Encryption : Encryption {
+class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption {
     companion object {
-        val KEY_SIZE = 1024 // bits
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        var KEY_SIZE = 1024 // bits
     }
 
     override fun generateInitialKey(privateKeyId: String): OBitSet {
         val privateKey = OBitSet(KEY_SIZE)
 //        val rand = SecureRandom()
         val rand = Random(0) // TODO: Use SecureRandom indeed.
-        for (i in 0..KEY_SIZE - 1) {
+        for (i in 0 until KEY_SIZE) {
             privateKey[i] = rand.nextBoolean()
         }
         storePrivateKey(privateKeyId, privateKey)
@@ -32,18 +34,20 @@ class WolframAutomataRule30Encryption : Encryption {
     }
 
     private fun storePrivateKey(privateKeyId: String, privateKey: OBitSet) {
-        SecurePreferences.setValue(privateKeyId, privateKey.toBase64())
+        prefs.setValue(privateKeyId, privateKey.toBase64())
     }
 
     override fun encrypt(privateKeyId: String, data: OBitSet, result: OBitSet): Observable<Float> {
         return Observable.create<Float> { emitter ->
-            val startTime = System.currentTimeMillis()
-            val b64 = SecurePreferences.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")
+                        val startTime = System.currentTimeMillis()
+
+
+            val b64 = prefs.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")
             val privateKey = Base64.decode(b64)
 
-            val generatedKey = generateEncryptionKey(privateKey, data.length(), emitter)
+            val generatedKey = generateEncryptionKey(privateKey, data.bitCount(), emitter)
 
-            result.set(0, data.length(), true)
+            result.set(0, data.bitCount(), true)
             result.and(data)
             result.xor(generatedKey)
             emitter.onComplete()
@@ -56,14 +60,15 @@ class WolframAutomataRule30Encryption : Encryption {
             // v1: 500 chars = 1150ms [1150-1221] (using more chars as durations looks more stable, and improvement should be more visible)
             // v2: 500 chars = 850ms [750-877] (fill the buffer of 1 before computing the new line, and set in the BitSet only when it's 0)
             // v3: 500 chars = 450ms [436-505] (OBitSet, no check, static size)
+            // v4: 500 chars = 430ms [424-159] (Add tests and fix some computational issues
 
         }.subscribeOn(Schedulers.computation())
     }
 
-    private fun generateEncryptionKey(privateKey: BitSet, keyLength: Int, progression: ObservableEmitter<Float>): OBitSet {
-        val privateKeySize = privateKey.size()
-        val triangleWidth = privateKeySize + keyLength * 2
-        val fullKeyColumn = (triangleWidth / 2) + 1
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    fun generateEncryptionKey(privateKey: OBitSet, keyLength: Int, progression: ObservableEmitter<Float>?): OBitSet {
+        val triangleWidth = KEY_SIZE + keyLength * 2
+        val fullKeyColumn = (triangleWidth / 2)
 
         // Prepare the memory for computation
         val bufferA = OBitSet(triangleWidth)
@@ -71,18 +76,21 @@ class WolframAutomataRule30Encryption : Encryption {
 
         // Initialize the first line
         bufferA.set(0, triangleWidth, true)
-        for (i in 0..privateKeySize) {
+        for (i in 0 until KEY_SIZE) {
             bufferA[keyLength + i] = privateKey[i]
         }
 
+        bufferB.set(0, triangleWidth, true)
         val fullKey = OBitSet(keyLength)
-        for (i in 1 until keyLength) {
+        for (i in 0 until keyLength) {
 //            progression.onNext((i.toFloat() * 100f) / keyLength.toFloat())
-            if (i % 2 == 1) {
+            if (i % 2 == 0) {
                 computeRule30Bool(bufferA, bufferB, triangleWidth)
+//                println(bufferB.toBinaryString())
                 fullKey[i] = bufferB[fullKeyColumn]
             } else {
                 computeRule30Bool(bufferB, bufferA, triangleWidth)
+//                println(bufferA.toBinaryString())
                 fullKey[i] = bufferA[fullKeyColumn]
             }
         }
@@ -95,7 +103,7 @@ class WolframAutomataRule30Encryption : Encryption {
         var current = input[1]
         var next: Boolean
         // Set every bits to 1 before to only change 0s greatly improves write performance.
-        output.set(0, output.length(), true)
+        output.set(0, output.bitCount() - 1, true)
         for (i in 1 until bufferSize - 1) {
             next = input[i + 1]
             if (!rule30(prev, current, next)) {

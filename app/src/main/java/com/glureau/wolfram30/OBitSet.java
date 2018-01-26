@@ -47,17 +47,6 @@ public class OBitSet implements Cloneable {
     private static final long WORD_MASK = 0xffffffffffffffffL;
 
     /**
-     * @serialField bits long[]
-     * <p>
-     * The bits in this BitSet.  The ith bit is stored in bits[i/64] at
-     * bit position i % 64 (where bit position 0 refers to the least
-     * significant bit and 63 refers to the most significant bit).
-     */
-    private static final ObjectStreamField[] serialPersistentFields = {
-            new ObjectStreamField("bits", long[].class),
-    };
-
-    /**
      * The internal field corresponding to the serialField "bits".
      */
     private long[] words;
@@ -66,6 +55,8 @@ public class OBitSet implements Cloneable {
      * The number of words in the logical size of this BitSet.
      */
     private transient final int wordsInUse;
+
+    private final int bitCount;
 
     /**
      * Given a bit index, return word index containing it.
@@ -88,6 +79,7 @@ public class OBitSet implements Cloneable {
         if (nbits < 0)
             throw new NegativeArraySizeException("nbits < 0: " + nbits);
 
+        bitCount = nbits;
         initWords(nbits);
         wordsInUse = words.length;
     }
@@ -102,7 +94,8 @@ public class OBitSet implements Cloneable {
      */
     private OBitSet(long[] words) {
         this.words = words;
-        this.wordsInUse = words.length;
+        wordsInUse = words.length;
+        bitCount = wordsInUse * BITS_PER_WORD;
     }
 
     /**
@@ -202,7 +195,7 @@ public class OBitSet implements Cloneable {
      *
      * @param bitIndex a bit index
      */
-    private void set(int bitIndex) {
+    void set(int bitIndex) {
         int wordIndex = wordIndex(bitIndex);
         words[wordIndex] |= (1L << bitIndex); // Restores invariants
     }
@@ -353,7 +346,7 @@ public class OBitSet implements Cloneable {
      * @return the logical size of this {@code BitSet}
      * @since 1.2
      */
-    public int length() {
+    private int length() {
         if (wordsInUse == 0)
             return 0;
 
@@ -397,5 +390,12 @@ public class OBitSet implements Cloneable {
         // Perform logical XOR on words in common
         for (int i = 0; i < wordsInUse; i++)
             words[i] ^= set.words[i];
+    }
+
+    /**
+     * @return the fixed bit count size
+     */
+    public int bitCount() {
+        return bitCount;
     }
 }

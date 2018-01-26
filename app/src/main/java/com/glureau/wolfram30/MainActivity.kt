@@ -3,6 +3,7 @@ package com.glureau.wolfram30
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
+import com.glureau.wolfram30.storage.AndroidSecurePreferences
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.concurrent.TimeUnit
@@ -16,7 +17,7 @@ class MainActivity : AppCompatActivity() {
 
         text.text = "Creating encryption..."
 
-        val encryption: Encryption = WolframAutomataRule30Encryption()
+        val encryption: Encryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
         // Should retrieve and display the key
         val encryptionKey = encryption.generateInitialKey("toto_room")
 
@@ -28,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     fun foo(encryption: Encryption, originalBitSet: OBitSet, originalMessage: String) {
         val startTime = System.currentTimeMillis()
-        val encryptedString = OBitSet(originalBitSet.length())
+        val encryptedString = OBitSet(originalBitSet.bitCount())
         encryption.encrypt("toto_room", originalBitSet, encryptedString)
                 .sample(1000, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
@@ -38,7 +39,7 @@ class MainActivity : AppCompatActivity() {
                     text.text = "Encryption Error... $error"
                 }, {
                     //                    text.text = "Decryption..."
-                    val finalMessage = OBitSet(encryptedString.length())
+                    val finalMessage = OBitSet(encryptedString.bitCount())
                     encryption.encrypt("toto_room", encryptedString, finalMessage)
                             .sample(1000, TimeUnit.MILLISECONDS)
                             .observeOn(AndroidSchedulers.mainThread())
