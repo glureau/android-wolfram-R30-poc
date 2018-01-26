@@ -1,12 +1,16 @@
 package com.glureau.wolfram30
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.DataInputStream
 import java.util.concurrent.TimeUnit
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -15,12 +19,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
 
-        text.text = "Creating encryption..."
+        mainLabel.textSize = 10f
+        mainLabel.text = "Creating encryption..."
 
         val encryption: Encryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
         // Should retrieve and display the key
         val encryptionKey = encryption.generateInitialKey("toto_room")
 
+        encryptText(encryption)
+    }
+
+    fun encryptText(encryption: Encryption) {
         // SIZE = 1024 char
         val originalMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed condimentum tellus sed semper euismod. Integer dignissim eros tellus, et sagittis tellus sagittis at. " +
                 "Donec vehicula tortor a augue tincidunt, ut auctor nulla feugiat. Vivamus luctus nulla mauris, vel iaculis felis rhoncus a. Pellentesque id orci eu lorem hendrerit finibus id at mi. " +
@@ -31,10 +40,6 @@ class MainActivity : AppCompatActivity() {
 
         val originalBitSet = OBitSet.valueOf(originalMessage.toByteArray())
 
-        foo(encryption, originalBitSet, originalMessage)
-    }
-
-    fun foo(encryption: Encryption, originalBitSet: OBitSet, originalMessage: String) {
         val startTime = System.currentTimeMillis()
         val encryptedString = OBitSet(originalBitSet.bitCount())
         encryption.encrypt("toto_room", originalBitSet, encryptedString)
@@ -43,7 +48,7 @@ class MainActivity : AppCompatActivity() {
                 .subscribe({ progression ->
                     //                    text.text = "Encryption... $progression%"
                 }, { error ->
-                    text.text = "Encryption Error... $error"
+                    mainLabel.text = "Encryption Error... $error"
                 }, {
                     //                    text.text = "Decryption..."
                     val finalMessage = OBitSet(encryptedString.bitCount())
@@ -53,16 +58,57 @@ class MainActivity : AppCompatActivity() {
                             .subscribe({ progress ->
                                 //                                text.text = "Decryption... $progress%"
                             }, { error ->
-                                text.text = "Decryption Error... $error"
+                                mainLabel.text = "Decryption Error... $error"
                             }, {
                                 val userMessage = "Original message = $originalMessage \n\n" +
 //                                        "Encryption key = ${encryptionKey.toBase64()} \n\n" +
-                                        "Encrypted message = ${encryptedString.toBase64()} \n\n" +
+//                                        "Encrypted message = ${encryptedString.toBase64()} \n\n" +
                                         "Decrypted message = ${String(finalMessage.toByteArray())}\n\n" +
                                         "Total duration = ${System.currentTimeMillis() - startTime} ms"
                                 Log.e("OOO", userMessage)
-                                text.text = userMessage
-                                foo(encryption, originalBitSet, originalMessage)
+                                mainLabel.text = userMessage
+                                encryptImage(encryption)
+                            })
+                })
+    }
+
+
+    fun encryptImage(encryption: Encryption) {
+        val inputStream = resources.openRawResource(R.raw.stephen_wolfram)
+        val buffer = ByteArray(inputStream.available())
+        Log.wtf("OOO", "Original buffer size = ${buffer.size}")
+        DataInputStream(inputStream).readFully(buffer)
+        val originalBitSet = OBitSet.valueOf(buffer)
+
+        val startTime = System.currentTimeMillis()
+        val encryptedString = OBitSet(originalBitSet.bitCount())
+        encryption.encrypt("toto_room", originalBitSet, encryptedString)
+                .sample(1000, TimeUnit.MILLISECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ progression ->
+                    //                    text.text = "Encryption... $progression%"
+                }, { error ->
+                    mainLabel.text = "Encryption Error... $error"
+                }, {
+                    //                    text.text = "Decryption..."
+                    val finalMessage = OBitSet(encryptedString.bitCount())
+                    encryption.encrypt("toto_room", encryptedString, finalMessage)
+                            .sample(1000, TimeUnit.MILLISECONDS)
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe({ progress ->
+                                //                                text.text = "Decryption... $progress%"
+                            }, { error ->
+                                mainLabel.text = "Decryption Error... $error"
+                            }, {
+                                val options = BitmapFactory.Options()
+                                options.inPreferredConfig = Bitmap.Config.ARGB_8888
+                                val resultByteArray = finalMessage.toByteArray()
+                                Log.wtf("OOO", "Original buffer size = ${resultByteArray.size}")
+                                val bitmap = BitmapFactory.decodeByteArray(resultByteArray, 0, resultByteArray.size)
+
+                                imageView.setImageBitmap(bitmap)
+                                imageLabel.text = "Total duration = ${System.currentTimeMillis() - startTime} ms"
+                                encryptText(encryption)
                             })
                 })
     }
