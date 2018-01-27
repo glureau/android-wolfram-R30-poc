@@ -12,7 +12,6 @@ import com.glureau.wolfram30.rx.FlowableUtils
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
-import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
@@ -39,9 +38,14 @@ class MainActivity : AppCompatActivity() {
 
         val encryption: Encryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
         encryption.generateInitialKey("toto_room")
+        go(encryption)
+    }
 
+    private fun go(encryption: Encryption) {
         encryptTextStream(encryption, originalMessage, {
-            encryptImageStream(encryption, resources.openRawResource(R.raw.stephen_wolfram), {})
+            encryptImageStream(encryption, resources.openRawResource(R.raw.stephen_wolfram), {
+                go(encryption)
+            })
         })
     }
 
@@ -92,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     fun encryptImageStream(encryption: Encryption, inputStream: InputStream, callbackFinish: () -> Unit) {
         val startTime = System.currentTimeMillis()
 
-        imageLabel.text = "Encrypting image..."
+//        imageLabel.text = "Encrypting image..."
         imageView.setImageResource(R.drawable.noise_314_220) // Fake image as the real image isn't a valid bitmap
         val imageBuffer = ByteArrayOutputStream()
 

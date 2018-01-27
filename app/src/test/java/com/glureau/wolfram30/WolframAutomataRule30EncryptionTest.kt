@@ -32,7 +32,7 @@ class WolframAutomataRule30EncryptionTest {
 //                .padStart(messageLength + privateKeyLength, '.')
 //                .padEnd(messageLength + privateKeyLength + messageLength, '.'))
 
-        val fullKey = encryption.generateEncryptionKey(privateKey, messageLength, null)
+        val fullKey = encryption.generateEncryptionKey(privateKey, messageLength)
 //        println(fullKey.toBinaryString())
 
         Assert.assertEquals("0100011001110100110110001010001100010101001111001101010010101000000111100001110101000111110110100111", fullKey.toBinaryString())

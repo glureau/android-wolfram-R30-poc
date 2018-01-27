@@ -1,11 +1,8 @@
 package com.glureau.wolfram30.encryption
 
 import android.support.annotation.VisibleForTesting
-import android.util.Log
 import com.glureau.wolfram30.storage.SecurePreferences
 import io.reactivex.Flowable
-import io.reactivex.Observable
-import io.reactivex.ObservableEmitter
 import io.reactivex.schedulers.Schedulers
 import java.util.*
 import kotlin.experimental.xor
@@ -17,9 +14,8 @@ import kotlin.experimental.xor
 class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption {
     companion object {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        var KEY_SIZE = 1024 // bits
-        private val WORKSPACE_MAXIMUM_WIDTH = 4096 // (bits) Don't compute more than that width
-        private val PARALLELIZED_TASK_COUNT = 8
+        var KEY_SIZE = 1024 // bits (Actually no good reason to be different than workspace max width...)
+        private val WORKSPACE_MAXIMUM_WIDTH = KEY_SIZE // (bits) Don't compute more than that width
         private val BITS_IN_BYTE = 8
     }
 
@@ -46,7 +42,7 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
         val b64 = prefs.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")
         val privateKey = Base64.decode(b64)
         return input.map { ba ->
-            val result = generateEncryptionKey(privateKey, ba.size * BITS_IN_BYTE, null).toByteArray()
+            val result = generateEncryptionKey(privateKey, ba.size * BITS_IN_BYTE).toByteArray()
             ba.forEachIndexed { index, byte ->
                 result[index] = byte xor result[index]
             }
@@ -59,7 +55,7 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    fun generateEncryptionKey(privateKey: OBitSet, keyLength: Int, progression: ObservableEmitter<Float>?): OBitSet {
+    fun generateEncryptionKey(privateKey: OBitSet, keyLength: Int): OBitSet {
         val triangleWidth = minOf(KEY_SIZE + keyLength * 2, WORKSPACE_MAXIMUM_WIDTH)
         val paddingLeft = (triangleWidth - KEY_SIZE) / 2
         val fullKeyColumn = (triangleWidth / 2)
@@ -77,7 +73,6 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
         bufferB.set(0, triangleWidth, true)
         val fullKey = OBitSet(keyLength)
         for (i in 0 until keyLength) {
-//            progression.onNext((i.toFloat() * 100f) / keyLength.toFloat())
             if (i % 2 == 0) {
                 computeRule30Bool(bufferA, bufferB, triangleWidth)
 //                println(bufferB.toBinaryString())
@@ -95,7 +90,6 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
     private fun computeRule30Bool(input: OBitSet, output: OBitSet, bufferSize: Int) {
         // Set every bits to 1 before to only change 0s greatly improves write performance.
         output.set(0, output.bitCount() - 1, true)
-
         computeRule30Bool(input, output, bufferSize, 1, bufferSize - 1)
     }
 
