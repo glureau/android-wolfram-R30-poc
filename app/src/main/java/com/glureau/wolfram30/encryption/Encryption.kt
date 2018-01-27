@@ -1,5 +1,6 @@
 package com.glureau.wolfram30.encryption
 
+import io.reactivex.Flowable
 import io.reactivex.Observable
 
 /**
@@ -9,6 +10,8 @@ interface Encryption {
     fun generateInitialKey(privateKeyId: String): OBitSet
     fun setEncryptionKey(privateKeyId: String, privateKey: OBitSet)
 
-    fun encrypt(privateKeyId: String, data: OBitSet, result: OBitSet): Observable<Float>
-    fun decrypt(privateKeyId: String, data: OBitSet, result: OBitSet): Observable<Float>
+    // To start displaying content during decryption...
+    // TODO : Replace with the magic (compose?) method to be aligned with RX philosophy
+    fun encrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray>
+    fun decrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray>
 }

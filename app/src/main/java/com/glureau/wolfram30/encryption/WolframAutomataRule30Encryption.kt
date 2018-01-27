@@ -3,10 +3,12 @@ package com.glureau.wolfram30.encryption
 import android.support.annotation.VisibleForTesting
 import android.util.Log
 import com.glureau.wolfram30.storage.SecurePreferences
+import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.schedulers.Schedulers
 import java.util.*
+import kotlin.experimental.xor
 
 
 /**
@@ -16,7 +18,9 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
     companion object {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         var KEY_SIZE = 1024 // bits
-        val WORKSPACE_MAXIMUM_WIDTH =  4096 // (bits) Don't compute more than that width
+        private val WORKSPACE_MAXIMUM_WIDTH = 4096 // (bits) Don't compute more than that width
+        private val PARALLELIZED_TASK_COUNT = 8
+        private val BITS_IN_BYTE = 8
     }
 
     override fun generateInitialKey(privateKeyId: String): OBitSet {
@@ -38,32 +42,20 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
         prefs.setValue(privateKeyId, privateKey.toBase64())
     }
 
-    override fun encrypt(privateKeyId: String, data: OBitSet, result: OBitSet): Observable<Float> {
-        return Observable.create<Float> { emitter ->
-            val startTime = System.currentTimeMillis()
-
-
-            val b64 = prefs.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")
-            val privateKey = Base64.decode(b64)
-
-            val generatedKey = generateEncryptionKey(privateKey, data.bitCount(), emitter)
-
-            result.set(0, data.bitCount(), true)
-            result.and(data)
-            result.xor(generatedKey)
-            emitter.onComplete()
-
-
-            val duration = System.currentTimeMillis() - startTime
-            Log.e("PERFORMANCE", "Encrypt duration: $duration ms")
-            // v0: 200 chars = 400ms per encrypt (Pixel 2 emulated) [398-431] (skip 2st computes, JVM not ready yet)
-            // v1: 200 chars = 270ms [253-305] (keep prev/current boolean instead of re-reading)
-            // v1: 500 chars = 1150ms [1150-1221] (using more chars as durations looks more stable, and improvement should be more visible)
-            // v2: 500 chars = 850ms [750-877] (fill the buffer of 1 before computing the new line, and set in the BitSet only when it's 0)
-            // v3: 500 chars = 450ms [436-505] (OBitSet, no check, static size)
-            // v4: 500 chars = 430ms [424-159] (Add tests and fix some computational issues
-
+    override fun encrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray> {
+        val b64 = prefs.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")
+        val privateKey = Base64.decode(b64)
+        return input.map { ba ->
+            val result = generateEncryptionKey(privateKey, ba.size * BITS_IN_BYTE, null).toByteArray()
+            ba.forEachIndexed { index, byte ->
+                result[index] = byte xor result[index]
+            }
+            result
         }.subscribeOn(Schedulers.computation())
+    }
+
+    override fun decrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray> {
+        return encrypt(privateKeyId, input)
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -100,13 +92,18 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
     }
 
 
-    private inline fun computeRule30Bool(input: OBitSet, output: OBitSet, bufferSize: Int) {
-        var prev = input[0]
-        var current = input[1]
-        var next: Boolean
+    private fun computeRule30Bool(input: OBitSet, output: OBitSet, bufferSize: Int) {
         // Set every bits to 1 before to only change 0s greatly improves write performance.
         output.set(0, output.bitCount() - 1, true)
-        for (i in 1 until bufferSize - 1) {
+
+        computeRule30Bool(input, output, bufferSize, 1, bufferSize - 1)
+    }
+
+    private fun computeRule30Bool(input: OBitSet, output: OBitSet, bufferSize: Int, start: Int, end: Int) {
+        var prev = input[start - 1]
+        var current = input[start]
+        var next: Boolean
+        for (i in start until end) {
             next = input[i + 1]
             if (!rule30(prev, current, next)) {
                 output.flip(i)
@@ -116,14 +113,9 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
         }
     }
 
-    private inline fun rule30(a: Boolean, b: Boolean, c: Boolean): Boolean {
+    private fun rule30(a: Boolean, b: Boolean, c: Boolean): Boolean {
         if (!a && (b xor c)) return true
         if ((a == b) && (a == c)) return true
         return false
-    }
-
-    override fun decrypt(privateKeyId: String, data: OBitSet, result: OBitSet): Observable<Float> {
-        // As it's the same principles : generating the pseudo-random key and XOR with original message, the decrypt is exactly the same operation.
-        return encrypt(privateKeyId, data, result)
     }
 }
