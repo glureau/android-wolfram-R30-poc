@@ -6,6 +6,7 @@ import io.reactivex.Emitter
 import io.reactivex.Flowable
 import io.reactivex.functions.BiConsumer
 import io.reactivex.functions.Consumer
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.Callable
@@ -36,4 +37,5 @@ object FlowableUtils {
                 Consumer { input: InputStream -> input.close() }
         )
     }
+
 }

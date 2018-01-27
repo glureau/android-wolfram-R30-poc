@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import com.glureau.wolfram30.encryption.Encryption
+import com.glureau.wolfram30.encryption.Utils
 import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
 import com.glureau.wolfram30.rx.FlowableUtils
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
@@ -50,8 +51,7 @@ class MainActivity : AppCompatActivity() {
         var userMessage = "Encrypted message = "
         Log.e("OOO", userMessage)
         mainLabel.text = userMessage
-        val input = ByteArrayInputStream(message.toByteArray())
-        encryptDecryptInputStream(encryption, input,
+        encryptDecryptInputStream(encryption, Utils.stringToInputStream(message),
                 { byteArrays ->
                     byteArrays.forEach { byteArray ->
                         byteArray.forEach { b ->
