@@ -11,7 +11,7 @@ import kotlin.experimental.xor
 /**
  * Created by Greg on 25/01/2018.
  */
-class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption {
+class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption, Decryption {
     companion object {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         var KEY_SIZE = 1024 // bits (Actually no good reason to be different than workspace max width...)
@@ -37,16 +37,17 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
     private fun storePrivateKey(privateKeyId: String, privateKey: OBitSet) {
         prefs.setValue(privateKeyId, privateKey.toBase64())
     }
-
     override fun encrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray> {
         val b64 = prefs.getStringValue(privateKeyId, null) ?: error("Cannot encrypt a message without private key")
         val privateKey = Base64.decode(b64)
         return input.map { ba ->
-            val result = generateEncryptionKey(privateKey, ba.size * BITS_IN_BYTE).toByteArray()
+            val (fullKeyOBitSet, lastLine) = generateEncryptionKey(privateKey, ba.size * BITS_IN_BYTE)
+            val fullKey = fullKeyOBitSet.toByteArray()
             ba.forEachIndexed { index, byte ->
-                result[index] = byte xor result[index]
+                fullKey[index] = byte xor fullKey[index]
             }
-            result
+            storePrivateKey(privateKeyId, lastLine)
+            fullKey
         }.subscribeOn(Schedulers.computation())
     }
 
@@ -55,35 +56,45 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    fun generateEncryptionKey(privateKey: OBitSet, keyLength: Int): OBitSet {
+    fun generateEncryptionKey(privateKey: OBitSet, keyLength: Int): Pair<OBitSet, OBitSet> {
         val triangleWidth = minOf(KEY_SIZE + keyLength * 2, WORKSPACE_MAXIMUM_WIDTH)
         val paddingLeft = (triangleWidth - KEY_SIZE) / 2
         val fullKeyColumn = (triangleWidth / 2)
 
         // Prepare the memory for computation
-        val bufferA = OBitSet(triangleWidth)
-        val bufferB = OBitSet(triangleWidth)
+        var bufferInput = OBitSet(triangleWidth)
+        var bufferOutput = OBitSet(triangleWidth)
 
         // Initialize the first line
-        bufferA.set(0, triangleWidth, true)
+        bufferInput.set(0, triangleWidth, true)
         for (i in 0 until KEY_SIZE) {
-            bufferA[paddingLeft + i] = privateKey[i]
+            bufferInput[paddingLeft + i] = privateKey[i]
         }
 
-        bufferB.set(0, triangleWidth, true)
+        bufferOutput.set(0, triangleWidth, true)
         val fullKey = OBitSet(keyLength)
+        var bufferTemp: OBitSet
         for (i in 0 until keyLength) {
-            if (i % 2 == 0) {
-                computeRule30Bool(bufferA, bufferB, triangleWidth)
-//                println(bufferB.toBinaryString())
-                fullKey[i] = bufferB[fullKeyColumn]
-            } else {
-                computeRule30Bool(bufferB, bufferA, triangleWidth)
-//                println(bufferA.toBinaryString())
-                fullKey[i] = bufferA[fullKeyColumn]
-            }
+
+            computeRule30Bool(bufferInput, bufferOutput, triangleWidth)
+            fullKey[i] = bufferOutput[fullKeyColumn]
+
+            // Swap bufferInput and bufferOuput
+            bufferTemp = bufferInput
+            bufferInput = bufferOutput
+            bufferOutput = bufferTemp
+
+//            if (i % 2 == 0) {
+//                computeRule30Bool(bufferA, bufferB, triangleWidth)
+////                println(bufferB.toBinaryString())
+//                fullKey[i] = bufferB[fullKeyColumn]
+//            } else {
+//                computeRule30Bool(bufferB, bufferA, triangleWidth)
+////                println(bufferA.toBinaryString())
+//                fullKey[i] = bufferA[fullKeyColumn]
+//            }
         }
-        return fullKey
+        return Pair(fullKey, bufferInput)
     }
 
 

@@ -8,10 +8,7 @@ import io.reactivex.Observable
  */
 interface Encryption {
     fun generateInitialKey(privateKeyId: String): OBitSet
-    fun setEncryptionKey(privateKeyId: String, privateKey: OBitSet)
 
-    // To start displaying content during decryption...
     // TODO : Replace with the magic (compose?) method to be aligned with RX philosophy
     fun encrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray>
-    fun decrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray>
 }

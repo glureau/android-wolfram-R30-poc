@@ -5,9 +5,7 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import com.glureau.wolfram30.encryption.Encryption
-import com.glureau.wolfram30.encryption.Utils
-import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
+import com.glureau.wolfram30.encryption.*
 import com.glureau.wolfram30.rx.FlowableUtils
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -26,7 +24,9 @@ class MainActivity : AppCompatActivity() {
                 "Curabitur vitae odio non felis interdum pulvinar eu at purus. Nunc vel finibus felis.\n\n" +
                 "Cras vitae dolor lacus. Nunc tempus, mi a venenatis venenatis, quam lacus tempor nibh, nec fringilla nisl sapien quis lectus. Interdum et malesuada fames ac ante ipsum primis in faucibus." +
                 " Mauris pharetra odio a lectus varius commodo. Fusce tincidunt tellus vel ex sodales, in sollicitudin mi mollis. Integer rutrum lacus id mi pretium luctus. Mauris eget libero magna. Morbi metus."
-        val readingBufferSize = 50
+        val readingBufferSize = 1024
+        val encryptionKeyId = "encrypt_id"
+        val decryptionKeyId = "decrypt_id"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,25 +37,28 @@ class MainActivity : AppCompatActivity() {
         mainLabel.text = "Creating encryption..."
 
         val encryption: Encryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
-        encryption.generateInitialKey("toto_room")
-        go(encryption)
+        val encryptionKey = encryption.generateInitialKey(encryptionKeyId)
+
+        val decryption: Decryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
+        decryption.setEncryptionKey(decryptionKeyId, encryptionKey)
+        go(encryption, decryption)
     }
 
-    private fun go(encryption: Encryption) {
-        encryptTextStream(encryption, originalMessage, {
-            encryptImageStream(encryption, resources.openRawResource(R.raw.stephen_wolfram), {
-                go(encryption)
+    private fun go(encryption: Encryption, decryption: Decryption) {
+        encryptTextStream(encryption, decryption, originalMessage, {
+            encryptImageStream(encryption, decryption, resources.openRawResource(R.raw.stephen_wolfram), {
+                go(encryption, decryption)
             })
         })
     }
 
-    fun encryptTextStream(encryption: Encryption, message: String, callbackFinish: () -> Unit) {
+    fun encryptTextStream(encryption: Encryption, decryption: Decryption, message: String, callbackFinish: () -> Unit) {
         val startTime = System.currentTimeMillis()
 
         var userMessage = "Encrypted message = "
         Log.e("OOO", userMessage)
         mainLabel.text = userMessage
-        encryptDecryptInputStream(encryption, Utils.stringToInputStream(message),
+        encryptDecryptInputStream(encryption, decryption, message.toInputStream(),
                 { byteArrays ->
                     byteArrays.forEach { byteArray ->
                         byteArray.forEach { b ->
@@ -93,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    fun encryptImageStream(encryption: Encryption, inputStream: InputStream, callbackFinish: () -> Unit) {
+    fun encryptImageStream(encryption: Encryption, decryption: Decryption, inputStream: InputStream, callbackFinish: () -> Unit) {
         val startTime = System.currentTimeMillis()
 
 //        imageLabel.text = "Encrypting image..."
@@ -103,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         val options = BitmapFactory.Options()
         options.inPreferredConfig = Bitmap.Config.ARGB_8888
 
-        encryptDecryptInputStream(encryption, inputStream,
+        encryptDecryptInputStream(encryption, decryption, inputStream,
                 { },
                 {
                     imageLabel.text = "Encryption Error... $it"
@@ -135,7 +138,8 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    fun encryptDecryptInputStream(encryption: Encryption, inputStream: InputStream,
+    fun encryptDecryptInputStream(encryption: Encryption, decryption: Decryption,
+                                  inputStream: InputStream,
                                   callbackEncrypt: (List<ByteArray>) -> Unit,
                                   callbackEncryptError: (Throwable) -> Unit,
                                   callbackStartDecryption: () -> Unit,
@@ -145,7 +149,7 @@ class MainActivity : AppCompatActivity() {
     ) {
         val encryptedMessage = ByteArrayOutputStream()
 
-        encryption.encrypt("toto_room", FlowableUtils.generate(inputStream, readingBufferSize))
+        encryption.encrypt(encryptionKeyId, FlowableUtils.generate(inputStream, readingBufferSize))
                 .buffer(50, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ byteArrays ->
@@ -157,7 +161,7 @@ class MainActivity : AppCompatActivity() {
                     callbackEncryptError(error)
                 }, {
                     callbackStartDecryption()
-                    encryption.decrypt("toto_room", FlowableUtils.generate(encryptedMessage.toByteArray().inputStream(), readingBufferSize))
+                    decryption.decrypt(decryptionKeyId, FlowableUtils.generate(encryptedMessage.toByteArray().inputStream(), readingBufferSize))
                             .buffer(50, TimeUnit.MILLISECONDS)
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe({ byteArrays ->

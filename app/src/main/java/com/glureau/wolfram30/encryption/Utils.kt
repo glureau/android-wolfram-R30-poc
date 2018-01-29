@@ -12,6 +12,4 @@ fun OBitSet.toBinaryString(): String {
 
 fun OBitSet.toBase64() = Base64.encode(this)
 
-object Utils {
-    fun stringToInputStream(data: String) = ByteArrayInputStream(data.toByteArray())
-}
+fun String.toInputStream() = ByteArrayInputStream(toByteArray())
