@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private fun go(encryption: Encryption, decryption: Decryption) {
         encryptTextStream(encryption, decryption, originalMessage, {
             encryptImageStream(encryption, decryption, resources.openRawResource(R.raw.stephen_wolfram), {
+                Thread.sleep(5000)
                 go(encryption, decryption)
             })
         })
@@ -56,7 +57,6 @@ class MainActivity : AppCompatActivity() {
         val startTime = System.currentTimeMillis()
 
         var userMessage = "Encrypted message = "
-        Log.e("OOO", userMessage)
         mainLabel.text = userMessage
         encryptDecryptInputStream(encryption, decryption, message.toInputStream(),
                 { byteArrays ->
@@ -150,7 +150,7 @@ class MainActivity : AppCompatActivity() {
         val encryptedMessage = ByteArrayOutputStream()
 
         encryption.encrypt(encryptionKeyId, FlowableUtils.generate(inputStream, readingBufferSize))
-                .buffer(50, TimeUnit.MILLISECONDS)
+                .buffer(500, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ byteArrays ->
                     byteArrays.forEach { byteArray ->
@@ -162,7 +162,7 @@ class MainActivity : AppCompatActivity() {
                 }, {
                     callbackStartDecryption()
                     decryption.decrypt(decryptionKeyId, FlowableUtils.generate(encryptedMessage.toByteArray().inputStream(), readingBufferSize))
-                            .buffer(50, TimeUnit.MILLISECONDS)
+                            .buffer(500, TimeUnit.MILLISECONDS)
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe({ byteArrays ->
                                 callbackDecrypt(byteArrays)
