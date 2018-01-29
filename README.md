@@ -26,14 +26,15 @@ you can have a look at the picture here https://www.wolframscience.com/nks/p605-
 - As described in the previous link (https://www.wolframscience.com/nks/p605--cryptography-and-cryptanalysis/) use one bit every 2 lines
 looks way stronger from a cryptographic point of view, but the performance I currently have are not good enough to be reduced by 2.
 
-- The current implementation re-use always the same key, but the idea is to consume the key:
+- The current implementation consumes the key:
 each line generated with the algorithm is used to encrypt one bit of the message, and then it's used to compute the next line,
-so instead of keeping the original key, we should keep the last line after each compute.
+so instead of keeping the original key, we keep the last line after each compute.
 This also means that the encryption/decryption of multiple messages have to be strictly ordered.
 As a chat application should allow each part to send messages asynchronously, a key should be generated for each conversation and for each member of the conversation.
-So a one-to-one chat should be based on 2 keys, one for each person.
+So a one-to-one chat should be based on 2 keys, one for each person, used for encryption. The exchange will deliver the decryption key (the other encryption key).
+During the key exchange, no message should be transferred (or the key will not be indexed the same on both device.
 
 - Arising from the previous point, the key is consumed by both parts and is the critical secure parts, so we can't send it again to resync on multiple devices.
-This means the *naive* implementation is to establish a crypted communication between 2 physical devices, it couldn't support to log from another account 
-(or it should recompute everything again, from the beggining, if we keep the original key in memory?)
+This means the *naive* implementation is to establish an encrypted communication between 2 physical devices, it couldn't support to log from another account
+or to regenerate old messages (or it should recompute everything again, from the beginning, if we keep the original key in memory?)
 
