@@ -8,6 +8,5 @@ import io.reactivex.Flowable
 interface Decryption {
     fun setEncryptionKey(privateKeyId: String, privateKey: OBitSet)
 
-    // To start displaying content during decryption...
     fun decrypt(privateKeyId: String, input: Flowable<ByteArray>): Flowable<ByteArray>
 }

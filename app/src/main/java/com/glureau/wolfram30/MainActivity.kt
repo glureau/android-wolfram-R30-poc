@@ -149,7 +149,8 @@ class MainActivity : AppCompatActivity() {
     ) {
         val encryptedMessage = ByteArrayOutputStream()
 
-        encryption.encrypt(encryptionKeyId, FlowableUtils.generate(inputStream, readingBufferSize))
+        FlowableUtils.generate(inputStream, readingBufferSize)
+                .compose { encryption.encrypt(encryptionKeyId, it) }
                 .buffer(500, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ byteArrays ->
@@ -161,7 +162,8 @@ class MainActivity : AppCompatActivity() {
                     callbackEncryptError(error)
                 }, {
                     callbackStartDecryption()
-                    decryption.decrypt(decryptionKeyId, FlowableUtils.generate(encryptedMessage.toByteArray().inputStream(), readingBufferSize))
+                    FlowableUtils.generate(encryptedMessage.toByteArray().inputStream(), readingBufferSize)
+                            .compose { decryption.decrypt(decryptionKeyId, it) }
                             .buffer(500, TimeUnit.MILLISECONDS)
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe({ byteArrays ->
