@@ -2,11 +2,12 @@ package com.glureau.wolfram30.rx
 
 // https://github.com/ReactiveX/RxJavaString/blob/1.x/src/main/java/rx/internal/operators/OnSubscribeInputStream.java
 
+import android.util.Log
 import io.reactivex.Emitter
 import io.reactivex.Flowable
 import io.reactivex.functions.BiConsumer
 import io.reactivex.functions.Consumer
-import java.io.ByteArrayInputStream
+import io.reactivex.schedulers.Schedulers
 import java.io.InputStream
 import java.util.*
 import java.util.concurrent.Callable
@@ -35,7 +36,7 @@ object FlowableUtils {
                     }
                 },
                 Consumer { input: InputStream -> input.close() }
-        )
+        ).subscribeOn(Schedulers.io())
     }
 
 }

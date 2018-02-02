@@ -5,10 +5,15 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import com.glureau.wolfram30.encryption.*
+import com.glureau.wolfram30.encryption.Decryption
+import com.glureau.wolfram30.encryption.Encryption
+import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
+import com.glureau.wolfram30.encryption.toInputStream
 import com.glureau.wolfram30.rx.FlowableUtils
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -47,8 +52,12 @@ class MainActivity : AppCompatActivity() {
     private fun go(encryption: Encryption, decryption: Decryption) {
         encryptTextStream(encryption, decryption, originalMessage, {
             encryptImageStream(encryption, decryption, resources.openRawResource(R.raw.stephen_wolfram), {
-                Thread.sleep(5000)
-                go(encryption, decryption)
+                Observable.timer(5, TimeUnit.SECONDS)
+                        .subscribeOn(Schedulers.computation())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe {
+                            go(encryption, decryption)
+                        }
             })
         })
     }
