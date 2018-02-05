@@ -1,10 +1,9 @@
-package com.glureau.wolfram30
+package com.glureau.wolfram30.demo
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import com.glureau.wolfram30.encryption.Decryption
 import com.glureau.wolfram30.encryption.Encryption
 import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
@@ -160,7 +159,7 @@ class MainActivity : AppCompatActivity() {
 
         FlowableUtils.generate(inputStream, readingBufferSize)
                 .compose { encryption.encrypt(encryptionKeyId, it) }
-                .buffer(500, TimeUnit.MILLISECONDS)
+                .buffer(100, TimeUnit.MILLISECONDS)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ byteArrays ->
                     byteArrays.forEach { byteArray ->
@@ -173,7 +172,7 @@ class MainActivity : AppCompatActivity() {
                     callbackStartDecryption()
                     FlowableUtils.generate(encryptedMessage.toByteArray().inputStream(), readingBufferSize)
                             .compose { decryption.decrypt(decryptionKeyId, it) }
-                            .buffer(500, TimeUnit.MILLISECONDS)
+                            .buffer(100, TimeUnit.MILLISECONDS)
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe({ byteArrays ->
                                 callbackDecrypt(byteArrays)

@@ -2,7 +2,6 @@ package com.glureau.wolfram30.rx
 
 // https://github.com/ReactiveX/RxJavaString/blob/1.x/src/main/java/rx/internal/operators/OnSubscribeInputStream.java
 
-import android.util.Log
 import io.reactivex.Emitter
 import io.reactivex.Flowable
 import io.reactivex.functions.BiConsumer
