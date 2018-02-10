@@ -1,9 +1,9 @@
 package com.glureau.wolfram30
 
 import com.glureau.wolfram30.encryption.OBitSet
-import com.glureau.wolfram30.encryption.Utils
 import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
 import com.glureau.wolfram30.encryption.toBinaryString
+import com.glureau.wolfram30.encryption.toInputStream
 import com.glureau.wolfram30.rx.FlowableUtils
 import com.glureau.wolfram30.storage.RamSecurePreferences
 import org.junit.Assert
@@ -35,13 +35,13 @@ class WolframAutomataRule30EncryptionTest {
         val fullKey = encryption.generateEncryptionKey(privateKey, messageLength)
 //        println(fullKey.toBinaryString())
 
-        Assert.assertEquals("0100011001110100110110001010001100010101001111001101010010101000000111100001110101000111110110100111", fullKey.toBinaryString())
+        Assert.assertEquals("0100011001110100110110001010001100010101001111001101010010101000000111100001110101000111110110100111", fullKey.first.toBinaryString())
     }
 
     @Test
     fun testComplexScenario() {
         val originalMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer pretium, arcu ut bibendum facilisis, ex sapien posuere quam, ut cursus eros lectus sit amet orci. Aliquam malesuada eleifend viverra. Donec nec lorem libero. Aenean id arcu turpis. Vivamus diam ex, tristique non commodo vel, venenatis sed metus. Sed sit amet luctus ante. Proin et facilisis sapien. Morbi hendrerit augue arcu, id placerat nisi auctor sit amet. Nullam sed augue accumsan, vestibulum velit nec, laoreet ligula cras amet."
-        val inputStream = Utils.stringToInputStream(originalMessage)
+        val inputStream = originalMessage.toInputStream()
 
         val encryption = WolframAutomataRule30Encryption(RamSecurePreferences())
         val privateKeyId = "complex_scenario"

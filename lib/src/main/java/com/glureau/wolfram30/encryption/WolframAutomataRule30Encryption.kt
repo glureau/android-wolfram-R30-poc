@@ -83,16 +83,6 @@ class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption
             bufferTemp = bufferInput
             bufferInput = bufferOutput
             bufferOutput = bufferTemp
-
-//            if (i % 2 == 0) {
-//                computeRule30Bool(bufferA, bufferB, triangleWidth)
-////                println(bufferB.toBinaryString())
-//                fullKey[i] = bufferB[fullKeyColumn]
-//            } else {
-//                computeRule30Bool(bufferB, bufferA, triangleWidth)
-////                println(bufferA.toBinaryString())
-//                fullKey[i] = bufferA[fullKeyColumn]
-//            }
         }
         return Pair(fullKey, bufferInput)
     }

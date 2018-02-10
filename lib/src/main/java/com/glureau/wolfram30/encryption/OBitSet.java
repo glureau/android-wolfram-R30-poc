@@ -44,11 +44,15 @@ public class OBitSet {
 
     /* Used to shift left or right for a partial word mask */
     private static final long WORD_MASK = 0xffffffffffffffffL;
+    private static final long WORD_FIRST_BIT_MASK = 0x7fffffffffffffffL;
+    private static final long WORD_FIRST_BIT      = 0x8000000000000000L;
+    private static final long WORD_LAST_BIT_MASK  = 0xfffffffffffffffeL;
+    private static final long WORD_LAST_BIT       = 0x0000000000000001L;
 
     /**
      * The internal field corresponding to the serialField "bits".
      */
-    private long[] words;
+    public long[] words;
 
     /**
      * The number of words in the logical size of this BitSet.
