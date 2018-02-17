@@ -17,10 +17,13 @@ class BitsContainer(val wordCount: Int) {
         const val WORD_MASK = -0x1L
         const val WORD_FIRST_BIT_MASK = WORD_MASK shl 1
         const val WORD_FIRST_BIT = WORD_MASK xor WORD_FIRST_BIT_MASK
-        const val WORD_LAST_BIT_MASK = WORD_MASK shr 1
+        const val WORD_LAST_BIT_MASK = WORD_MASK ushr 1
         const val WORD_LAST_BIT = WORD_MASK xor WORD_LAST_BIT_MASK
 
         const val TO_STRING_WORD_SEPARATOR = ""
+
+        fun wordIndex(bitPos: Int) = bitPos shr ADDRESS_BITS_PER_WORD
+        fun bitIndex(wordIndex: Int) = 1L shl wordIndex(wordIndex)
     }
 
     fun copyTo(target: BitsContainer) {
@@ -103,15 +106,7 @@ class BitsContainer(val wordCount: Int) {
     override fun toString(): String {
         val sb = StringBuffer()
         words.forEach {
-            val tmp = StringBuffer()
-            for (i in 0..63) {
-                if ((it shr (63 - i)) % 2 != 0L) {
-                    tmp.append('1')
-                } else {
-                    tmp.append('0')
-                }
-            }
-            sb.append(tmp)
+            sb.append(it.toBinaryString())
             sb.append(TO_STRING_WORD_SEPARATOR)
         }
         return sb.toString()
@@ -123,12 +118,11 @@ class BitsContainer(val wordCount: Int) {
         })
     }
 
-    fun wordIndex(bitPos: Int) = bitPos shr ADDRESS_BITS_PER_WORD
-    fun bitIndex(wordIndex: Int) = 1L shl wordIndex(wordIndex)
 
     fun getBitAt(bitPos: Int): Boolean {
         val wordIndex = wordIndex(bitPos)
         val bitInWordIndex = bitIndex(wordIndex)
-        return words[wordIndex] and bitInWordIndex != 0L
+        return (words[wordIndex] and (1L shl (64 - bitPos.rem(63)))) != 0L
+        // words[1] and (1 shl 63)
     }
 }

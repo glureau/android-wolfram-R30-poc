@@ -1,6 +1,7 @@
 package com.glureau.wolfram30.encryption
 
 import android.support.annotation.VisibleForTesting
+import com.glureau.wolfram30.encryption.BitsContainer.Companion.BITS_PER_WORD
 import com.glureau.wolfram30.storage.SecurePreferences
 import io.reactivex.Flowable
 import io.reactivex.schedulers.Schedulers
@@ -15,8 +16,10 @@ import kotlin.experimental.xor
 class WolframAutomataRule30Encryption2(val prefs: SecurePreferences) {
     companion object {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-        var KEY_SIZE = 1024 // bits (Actually no good reason to be different than workspace max width...)
+        var KEY_SIZE = 128 // bits (Actually no good reason to be different than workspace max width...)
         var KEY_BIT_POSITION = KEY_SIZE / 2
+        var KEY_BIT_WORD_POSITION = BitsContainer.wordIndex(KEY_BIT_POSITION)
+        var KEY_BIT_MASK = (1L shl (BITS_PER_WORD - KEY_BIT_POSITION.rem(BITS_PER_WORD - 1)))
         var WORD_COUNT = KEY_SIZE / BitsContainer.BITS_PER_WORD
         private val WORKSPACE_MAXIMUM_WIDTH = KEY_SIZE // (bits) Don't compute more than that width
 
@@ -71,12 +74,13 @@ class WolframAutomataRule30Encryption2(val prefs: SecurePreferences) {
                     CURRENT.copyTo(PREVIOUS)
                     CURRENT.copyTo(LEFT)
                     CURRENT.copyTo(RIGHT)
-                    LEFT.left()
-                    RIGHT.right()
+                    // As we want the same column to represent left/right, the copy moved to the right is LEFT (and vice-versa)
+                    LEFT.right()
+                    RIGHT.left()
                     /**
                      * Rule 30 can be described as:
                      * "look at each cell and its right hand
-                     * neighbor. If both of these were white
+                     * neighbor. If both of these were white [0]
                      * on the previous step, then take the color
                      * of the cell to be whatever the previous
                      * color of its left-hand neighbor was.
@@ -85,26 +89,36 @@ class WolframAutomataRule30Encryption2(val prefs: SecurePreferences) {
                      *
                      * Given the names L/C/R (left/center/right)
                      * it can be translated in 2 rules:
-                     * C == R ? => L
+                     * C == R == 0 => L
                      * C != R => !L
                      *
                      * != <=> XOR, so it can be written as :
-                     * !LEFT AND (CURRENT XOR RIGHT) OR
-                     * LEFT AND !(CURRENT XOR RIGHT)
+                     * LEFT AND !(CURRENT AND RIGHT)
+                     *    OR
+                     * !LEFT AND (CURRENT OR RIGHT)
                      */
-                    PREVIOUS.xor(RIGHT, TMP1) // TMP1= (C != R)
-                    LEFT.inv(TMP3)// TMP3 = !L
-                    TMP3.and(TMP1, TMP2)// TMP2 = !L & (C!=R)
-                    TMP1.inv() // TMP1= (C == R)
-                    LEFT.and(TMP1, TMP3) // TMP3 = L & (C==R)
+
+                    PREVIOUS.inv()
+                    RIGHT.inv()
+                    PREVIOUS.and(RIGHT, TMP1) // TMP1= (!C & !R)
+                    TMP1.and(LEFT, TMP2) // TMP2= !L & (!C&!R)
+
+                    TMP1.inv()
+                    LEFT.inv()
+                    TMP1.and(LEFT, TMP3)
                     TMP2.or(TMP3, CURRENT)
+
                     println(CURRENT)
-                    val keyBit = CURRENT.getBitAt(KEY_BIT_POSITION)
+                    val keyBit = CURRENT.words[KEY_BIT_WORD_POSITION] and KEY_BIT_MASK != 0L
+                    //val keyBit = CURRENT.getBitAt(KEY_BIT_POSITION)
+                    println("keyBit= $keyBit")
                     if (keyBit) {
-                        RESULT.plus(1 shl bitIndexInByte)
+                        RESULT = RESULT.plus((1 shl (7 - bitIndexInByte))).toByte()
+                        println("RESULT= ${RESULT.toBinaryString()}")
                     }
                 }
                 resultByteArray[byteIndex] = ba[byteIndex] xor RESULT
+                println("ba[byteIndex] (${ba[byteIndex].toBinaryString()}) xor RESULT (${RESULT.toBinaryString()}) = " + (ba[byteIndex] xor RESULT).toBinaryString())
             }
             //storePrivateKey(privateKeyId, CURRENT)
             resultByteArray
