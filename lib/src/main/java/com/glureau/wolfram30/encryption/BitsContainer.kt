@@ -1,5 +1,8 @@
 package com.glureau.wolfram30.encryption
 
+import android.util.Base64
+import android.util.Base64.DEFAULT
+
 /**
  * Similar to BitSet but no check, and managed as a cyclic buffer (left/right operations)
  */
@@ -103,7 +106,9 @@ class BitsContainer(val wordCount: Int) {
         }
     }
 
-    override fun toString(): String {
+    override fun toString() = toBinaryString()
+
+    fun toBinaryString(): String {
         val sb = StringBuffer()
         words.forEach {
             sb.append(it.toBinaryString())
@@ -121,8 +126,42 @@ class BitsContainer(val wordCount: Int) {
 
     fun getBitAt(bitPos: Int): Boolean {
         val wordIndex = wordIndex(bitPos)
-        val bitInWordIndex = bitIndex(wordIndex)
         return (words[wordIndex] and (1L shl (64 - bitPos.rem(63)))) != 0L
-        // words[1] and (1 shl 63)
+    }
+
+    fun bitCount() = wordCount * BITS_PER_WORD
+    fun toBase64(): String {
+        return Base64.encodeToString(toByteArray(), DEFAULT)
+    }
+
+    private fun toByteArray(): ByteArray {
+        val result = ByteArray(bitCount() / 8)
+        words.forEachIndexed({ i, word ->
+            val index = i * 8
+            result[index] = (word ushr 0).toByte()
+            result[index + 1] = (word ushr 8).toByte()
+            result[index + 2] = (word ushr 16).toByte()
+            result[index + 3] = (word ushr 24).toByte()
+            result[index + 4] = (word ushr 32).toByte()
+            result[index + 5] = (word ushr 40).toByte()
+            result[index + 6] = (word ushr 48).toByte()
+            result[index + 7] = (word ushr 56).toByte()
+        })
+        return result
+    }
+
+    fun fromBase64(b64: String) {
+        val buff = Base64.decode(b64, DEFAULT)
+        words.forEachIndexed({ i, _ ->
+            val index = i * 8
+            words[i] = (buff[index + 0].toULong()) or
+                    (buff[index + 1].toULong() shl 8) or
+                    (buff[index + 2].toULong() shl 16) or
+                    (buff[index + 3].toULong() shl 24) or
+                    (buff[index + 4].toULong() shl 32) or
+                    (buff[index + 5].toULong() shl 40) or
+                    (buff[index + 6].toULong() shl 48) or
+                    (buff[index + 7].toULong() shl 56)
+        })
     }
 }

@@ -2,15 +2,6 @@ package com.glureau.wolfram30.encryption
 
 import java.io.ByteArrayInputStream
 
-fun OBitSet.toBinaryString(): String {
-    val result = StringBuffer(bitCount())
-    for (i in 0 until bitCount()) {
-        result.append(if (this[i]) '1' else '0')
-    }
-    return result.toString()
-}
-
-fun OBitSet.toBase64() = Base64.encode(this)
 
 fun String.toInputStream() = ByteArrayInputStream(toByteArray())
 
@@ -55,4 +46,10 @@ fun Byte.toBinaryString(): StringBuffer {
         }
     }
     return tmp
+}
+
+fun Byte.toULong(): Long {
+    val l = toLong()
+    if (this > 0) return l
+    return l and 0xFF
 }

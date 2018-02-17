@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption2
+import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
 import com.glureau.wolfram30.encryption.toInputStream
 import com.glureau.wolfram30.rx.FlowableUtils
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
@@ -38,15 +38,15 @@ class MainActivity2 : AppCompatActivity() {
         mainLabel.textSize = 10f
         mainLabel.text = "Creating encryption..."
 
-        val encryption = WolframAutomataRule30Encryption2(AndroidSecurePreferences())
+        val encryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
         val encryptionKey = encryption.generateInitialKey(encryptionKeyId)
 
-        val decryption = WolframAutomataRule30Encryption2(AndroidSecurePreferences())
+        val decryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
         decryption.setEncryptionKey(decryptionKeyId, encryptionKey)
         go(encryption, decryption)
     }
 
-    private fun go(encryption: WolframAutomataRule30Encryption2, decryption: WolframAutomataRule30Encryption2) {
+    private fun go(encryption: WolframAutomataRule30Encryption, decryption: WolframAutomataRule30Encryption) {
         encryptTextStream(encryption, decryption, originalMessage, {
             encryptImageStream(encryption, decryption, resources.openRawResource(R.raw.stephen_wolfram), {
                 Observable.timer(5, TimeUnit.SECONDS)
@@ -59,7 +59,7 @@ class MainActivity2 : AppCompatActivity() {
         })
     }
 
-    fun encryptTextStream(encryption: WolframAutomataRule30Encryption2, decryption: WolframAutomataRule30Encryption2, message: String, callbackFinish: () -> Unit) {
+    fun encryptTextStream(encryption: WolframAutomataRule30Encryption, decryption: WolframAutomataRule30Encryption, message: String, callbackFinish: () -> Unit) {
         val startTime = System.currentTimeMillis()
 
         var userMessage = "Encrypted message = "
@@ -102,7 +102,7 @@ class MainActivity2 : AppCompatActivity() {
     }
 
 
-    fun encryptImageStream(encryption: WolframAutomataRule30Encryption2, decryption: WolframAutomataRule30Encryption2, inputStream: InputStream, callbackFinish: () -> Unit) {
+    fun encryptImageStream(encryption: WolframAutomataRule30Encryption, decryption: WolframAutomataRule30Encryption, inputStream: InputStream, callbackFinish: () -> Unit) {
         val startTime = System.currentTimeMillis()
 
 //        imageLabel.text = "Encrypting image..."
@@ -144,8 +144,8 @@ class MainActivity2 : AppCompatActivity() {
         )
     }
 
-    fun encryptDecryptInputStream(encryption: WolframAutomataRule30Encryption2,
-                                  decryption: WolframAutomataRule30Encryption2,
+    fun encryptDecryptInputStream(encryption: WolframAutomataRule30Encryption,
+                                  decryption: WolframAutomataRule30Encryption,
                                   inputStream: InputStream,
                                   callbackEncrypt: (List<ByteArray>) -> Unit,
                                   callbackEncryptError: (Throwable) -> Unit,
