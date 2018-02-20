@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import com.glureau.wolfram30.encryption.Decryption
 import com.glureau.wolfram30.encryption.Encryption
-import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
+import com.glureau.wolfram30.encryption.AutomataRule30
 import com.glureau.wolfram30.encryption.toInputStream
 import com.glureau.wolfram30.rx.FlowableUtils
 import com.glureau.wolfram30.storage.AndroidSecurePreferences
@@ -40,10 +40,10 @@ class MainActivity : AppCompatActivity() {
         mainLabel.textSize = 10f
         mainLabel.text = "Creating encryption..."
 
-        val encryption: Encryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
+        val encryption: Encryption = AutomataRule30(AndroidSecurePreferences())
         val encryptionKey = encryption.generateInitialKey(encryptionKeyId)
 
-        val decryption: Decryption = WolframAutomataRule30Encryption(AndroidSecurePreferences())
+        val decryption: Decryption = AutomataRule30(AndroidSecurePreferences())
         decryption.setEncryptionKey(decryptionKeyId, encryptionKey)
         go(encryption, decryption)
     }

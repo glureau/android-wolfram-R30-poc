@@ -13,7 +13,7 @@ import kotlin.experimental.xor
  * Created by Greg on 25/01/2018.
  * Just trying some low-level implementation trying to improve perfs without starting native C/C++ dev.
  */
-class WolframAutomataRule30Encryption(val prefs: SecurePreferences) : Encryption, Decryption {
+class AutomataRule30(val prefs: SecurePreferences) : Encryption, Decryption {
     companion object {
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         var KEY_SIZE = 1024 // bits (Actually no good reason to be different than workspace max width...)

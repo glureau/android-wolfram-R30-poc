@@ -1,7 +1,7 @@
 package com.glureau.wolfram30
 
 import com.glureau.wolfram30.encryption.BitsContainer
-import com.glureau.wolfram30.encryption.WolframAutomataRule30Encryption
+import com.glureau.wolfram30.encryption.AutomataRule30
 import com.glureau.wolfram30.encryption.toBinaryString
 import com.glureau.wolfram30.storage.RamSecurePreferences
 import io.reactivex.Flowable
@@ -14,9 +14,9 @@ import org.junit.Test
 class WolframAutomataRule30EncryptionTest {
     @Test
     fun testRule30() {
-        val encryption = WolframAutomataRule30Encryption(RamSecurePreferences())
-        val privateKeyLength = WolframAutomataRule30Encryption.KEY_SIZE
-        val privateKey = BitsContainer(WolframAutomataRule30Encryption.WORD_COUNT)
+        val encryption = AutomataRule30(RamSecurePreferences())
+        val privateKeyLength = AutomataRule30.KEY_SIZE
+        val privateKey = BitsContainer(AutomataRule30.WORD_COUNT)
         val wordIndex = (privateKeyLength / BitsContainer.BITS_PER_WORD) / 2
         privateKey.words[wordIndex] = BitsContainer.WORD_LAST_BIT
         println(privateKey)
@@ -29,7 +29,7 @@ class WolframAutomataRule30EncryptionTest {
 
     @Test
     fun testPerformance() {
-        val encryption = WolframAutomataRule30Encryption(RamSecurePreferences())
+        val encryption = AutomataRule30(RamSecurePreferences())
         encryption.generateInitialKey("titi")
         val startTime = System.currentTimeMillis()
         var result: ByteArray? = null
